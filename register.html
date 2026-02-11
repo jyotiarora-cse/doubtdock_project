@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Registration</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body {
+            background: #e6f0fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .registration-form {
+            background: #ffffff;
+            padding: 40px 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 450px;
+        }
+        .registration-form h2 {
+            color: #0056b3;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 26px;
+            font-weight: 600;
+        }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 500; color: #333; }
+        input[type="text"], input[type="email"], input[type="password"], select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1.5px solid #cce0ff;
+            border-radius: 8px;
+            transition: border 0.3s, box-shadow 0.3s;
+            font-size: 15px;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #3399ff;
+            box-shadow: 0 0 8px rgba(51,153,255,0.3);
+        }
+        button {
+            width: 100%;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.2s;
+            margin-top: 10px;
+        }
+        button:hover { background: #0056b3; transform: translateY(-2px); }
+        
+        /* Default hidden fields */
+        #mentorFields, #studentFields { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="registration-form">
+    <h2>User Registration</h2>
+    <form action="register.php" method="POST">
+        <div class="form-group">
+            <label>Name:</label>
+            <input type="text" name="name" required placeholder="Enter your full name">
+        </div>
+
+        <div class="form-group">
+            <label>Email:</label>
+            <input type="email" name="email" required placeholder="Enter your email address">
+        </div>
+
+        <div class="form-group">
+            <label>Password:</label>
+            <input type="password" name="password" required placeholder="Create a strong password">
+        </div>
+
+        <div class="form-group">
+            <label>Role:</label>
+            <select name="role" id="role" required onchange="toggleFields()">
+                <option value="">Select Role</option>
+                <option value="student">Student</option>
+                <option value="mentor">Mentor</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Branch:</label>
+            <select name="branch" id="branch" required onchange="updateSubjects()">
+                <option value="">Select Branch</option>
+                <option value="CSE">CSE (Computer Science)</option>
+                <option value="ECE">ECE (Electronics)</option>
+                <option value="MECH">MECH (Mechanical)</option>
+                <option value="CIVIL">CIVIL (Civil)</option>
+            </select>
+        </div>
+
+        <div id="studentFields">
+            <div class="form-group">
+                <label>Select Semester:</label>
+                <select name="semester" class="form-control">
+                    <option value="">-- Click to Select Semester --</option>
+                    <option value="1">Semester 1</option>
+                    <option value="2">Semester 2</option>
+                    <option value="3">Semester 3</option>
+                    <option value="4">Semester 4</option>
+                    <option value="5">Semester 5</option>
+                    <option value="6">Semester 6</option>
+                    <option value="7">Semester 7</option>
+                    <option value="8">Semester 8</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="mentorFields">
+            <div class="form-group">
+                <label>Expertise Subject:</label>
+                <select name="subject_experties" id="subject_experties">
+                    <option value="">-- Select Branch First --</option>
+                </select>
+            </div>
+        </div>
+
+        <button type="submit">Register</button>
+    </form>
+</div>
+
+<script>
+// Roles ke basis par fields show/hide karne ke liye
+function toggleFields() {
+    const role = document.getElementById("role").value;
+    const studentDiv = document.getElementById("studentFields");
+    const mentorDiv = document.getElementById("mentorFields");
+
+    studentDiv.style.display = (role === "student") ? "block" : "none";
+    mentorDiv.style.display = (role === "mentor") ? "block" : "none";
+}
+
+// Branch ke basis par subjects update karne ke liye
+function updateSubjects() {
+    const branch = document.getElementById("branch").value;
+    const subjectSelect = document.getElementById("subject_experties");
+    
+    const subjects = {
+        "CSE": ["Data Structures", "DBMS", "Operating Systems", "Computer Networks", "Java Programming", "Python", "Software Engineering"],
+        "ECE": ["Circuit Theory", "Control Systems", "Microprocessors", "Digital Electronics", "Communication Systems", "Signals & Systems"],
+        "MECH": ["Thermodynamics", "Strength of Materials (SOM)", "Fluid Mechanics", "Theory of Machines", "AutoCAD", "Manufacturing Process"],
+        "CIVIL": ["Surveying", "Structural Analysis", "Geotechnical Engineering", "Concrete Technology", "Hydrology", "Environmental Engineering"]
+    };
+
+    subjectSelect.innerHTML = '<option value="">-- Choose Subject --</option>';
+
+    if(branch && subjects[branch]) {
+        subjects[branch].forEach(function(s) {
+            let option = document.createElement("option");
+            option.value = s;
+            option.text = s;
+            subjectSelect.appendChild(option);
+        });
+    }
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!-- login.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - DoubtDock</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    /* General Reset */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background: #f0f8ff; /* light blue background */
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Navbar */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #007bff;
+      color: white;
+      padding: 0.8rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .navbar .logo {
+      font-weight: 600;
+      font-size: 1.5rem;
+    }
+
+    .nav-links {
+      list-style: none;
+      display: flex;
+      gap: 1rem;
+    }
+
+    .nav-links li a {
+      color: white;
+      text-decoration: none;
+      font-weight: 500;
+      transition: 0.3s;
+    }
+
+    .nav-links li a:hover {
+      text-decoration: underline;
+    }
+
+    .hamburger {
+      font-size: 24px;
+      background: none;
+      color: #fff;
+      border: none;
+      display: none;
+      cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+        flex-direction: column;
+        background: #007bff;
+        width: 100%;
+        padding: 1rem 0;
+        margin-top: 0.5rem;
+      }
+      .nav-links.show {
+        display: flex;
+        animation: fadeIn 0.3s ease-in-out;
+      }
+      .hamburger {
+        display: block;
+      }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Login Section */
+    .form-section {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+    }
+
+    .form-container {
+      background: white;
+      padding: 2.5rem;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+      transition: transform 0.3s;
+    }
+
+    .form-container:hover {
+      transform: translateY(-5px);
+    }
+
+    .form-section h1 {
+      margin-bottom: 1.5rem;
+      color: #007bff;
+      font-size: 1.8rem;
+    }
+
+    .form-container input {
+      width: 100%;
+      padding: 12px 15px;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.3s;
+    }
+
+    .form-container input:focus {
+      outline: none;
+      border-color: #007bff;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 12px;
+      background: #007bff;
+      color: white;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background 0.3s;
+    }
+
+    .login-btn:hover {
+      background: #0056b3;
+    }
+
+    .form-container p {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
+
+    .form-container p a {
+      color: #007bff;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .form-container p a:hover {
+      text-decoration: underline;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 1rem;
+      background: #007bff;
+      color: white;
+      font-size: 0.9rem;
+    }
+
+  </style>
+</head>
+<body>
+
+<header>
+  <nav class="navbar">
+    <div class="logo">DoubtDock</div>
+    <button class="hamburger" id="hamburgerBtn">☰</button>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="resources.html">Resources</a></li>
+      
+      <li><a href="about.html">About</a></li>
+      
+      
+      
+      
+      <li><a href="login.html">Login</a></li>
+      <li><a href="register.html">Sign Up</a></li>
+    </ul>
+  </nav>
+</header>
+
+<section class="form-section">
+  <form class="form-container" action="login.php" method="POST">
+    <h1>Login to Your Account</h1>
+    <input type="email" name="email" placeholder="Email Address" required>
+    <input type="password" name="password" placeholder="Password" required>
+    <button type="submit" class="login-btn">Login</button>
+     <a href="forgot_password.php">Forget Password</a>
+    <p>Don't have an account? <a href="register.html">Register here</a>.</p>
+  </form>
+</section>
+
+<footer class="footer">
+  <p>&copy; 2025 DoubtDock. All rights reserved.</p>
+</footer>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const navLinks = document.getElementById("navLinks");
+  const hamburger = document.getElementById("hamburgerBtn");
+  if (hamburger && navLinks) {
+    hamburger.addEventListener("click", () => {
+      navLinks.classList.toggle("show");
+    });
+  }
+});
+</script>
+
+</body>
+</html>
