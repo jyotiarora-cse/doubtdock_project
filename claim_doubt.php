@@ -1,49 +1,72 @@
-<?php
+﻿<?php
 session_start();
 include 'db.php';
+require_once 'config.php';
 
-// claim_doubt.php ki shuruat mein
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'mentor') {
-    // Current URL ko session mein save karlo taaki login ke baad wapas yahan aa sakein
-    $_SESSION['redirect_to'] = "claim_doubt.php?id=" . $_GET['id'];
-    header("Location: login.html");
+    $_SESSION['redirect_to'] = "claim_doubt.php?id=" . intval($_GET['id'] ?? 0);
+    header("Location: login.php");
     exit();
 }
-// URL se ID lena
+
 if (!isset($_GET['id'])) {
     die("Error: Doubt ID missing.");
 }
 
-$doubt_id = mysqli_real_escape_string($conn, $_GET['id']);
-$mentor_id = $_SESSION['user_id'];
+$doubt_id  = intval($_GET['id']);
+$mentor_id = intval($_SESSION['user_id']);
 
-// Check status (Column name doubt_id use kiya hai)
-$check = mysqli_query($conn, "SELECT status FROM doubts WHERE doubt_id = '$doubt_id'");
-$row = mysqli_fetch_assoc($check);
+// Atomic check+update — only update if still Pending (race condition safe)
+$update = $conn->prepare(
+    "UPDATE doubts SET status = 'Accepted', mentor_id = ?
+     WHERE doubt_id = ? AND status = 'Pending'"
+);
+$update->bind_param("ii", $mentor_id, $doubt_id);
+$update->execute();
+$affected = $conn->affected_rows;
+$update->close();
 
-if ($row && $row['status'] == 'Pending') {
-    // Update Database
-    $update = "UPDATE doubts SET status = 'Accepted', mentor_id = '$mentor_id' WHERE doubt_id = '$doubt_id'";
-    
-    if (mysqli_query($conn, $update)) {
-        // Node.js ko signal bhejna
-        $notify_node = "http://localhost:3000/notify-claim/" . $doubt_id;
-        @file_get_contents($notify_node); 
-        
-        header("Location: chat_ui.php?id=" . $doubt_id);
-        exit();
+if ($affected > 0) {
+    // Notify via cURL (with timeout + error logging — replaces silent @file_get_contents)
+    $ch = curl_init(NODE_URL . "/notify-claim/" . $doubt_id);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
+    $res = curl_exec($ch);
+    if (curl_errno($ch)) {
+        error_log("Socket notify failed (claim_doubt #$doubt_id): " . curl_error($ch));
     }
+    curl_close($ch);
+
+    header("Location: chat_ui.php?id=" . $doubt_id);
+    exit();
+
 } else {
-    // claim_doubt.php mein
-if ($row && $row['status'] == 'Pending') {
-    // ... (aapka update logic) ...
-} else {
-    echo "<div style='text-align:center; margin-top:50px;'>
-            <h2>Oops! Too Late.</h2>
-            <p>This doubt has already been claimed by another expert or is no longer available.</p>
-            <a href='teacher_dashboard.php'>Go back to Dashboard</a>
-          </div>";
+    // Another mentor claimed it first
+    echo '<!DOCTYPE html><html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Already Claimed | DoubtDock</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:"Segoe UI",sans-serif;background:#f0f2f5;display:flex;justify-content:center;align-items:center;height:100vh;}
+        .box{background:white;padding:40px;border-radius:20px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,0.1);max-width:420px;width:90%;}
+        .icon{font-size:3rem;margin-bottom:16px;color:#ffc107;}
+        h2{color:#333;margin-bottom:10px;font-size:1.4rem;}
+        p{color:#666;line-height:1.6;margin-bottom:24px;}
+        a{display:inline-block;background:#3b5bdb;color:white;padding:11px 28px;border-radius:10px;text-decoration:none;font-weight:600;transition:0.2s;}
+        a:hover{background:#2f4ac7;transform:translateY(-2px);}
+    </style>
+    </head><body>
+    <div class="box">
+      <div class="icon"><i class="fa-solid fa-clock"></i></div>
+      <h2>Too Late!</h2>
+      <p>Another mentor has already claimed this doubt. Head back to the dashboard to find new doubts!</p>
+      <a href="teacher_dashboard.php"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+    </div>
+    </body></html>';
     exit();
 }
-}
 ?>
+

@@ -1,230 +1,124 @@
-<!-- login.html -->
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login - DoubtDock</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  <style>
-    /* General Reset */
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Inter', sans-serif;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DoubtDock | Sign In</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg: #f8fafc;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+        }
 
-    body {
-      background: #f0f8ff; /* light blue background */
-      color: #333;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(135deg, #e0e7ff 0%, #f1f5f9 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 20px;
+        }
 
-    /* Navbar */
-    .navbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #007bff;
-      color: white;
-      padding: 0.8rem 2rem;
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-    }
+        .login-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid rgba(255,255,255,0.5);
+            animation: slideUp 0.6s ease-out;
+        }
 
-    .navbar .logo {
-      font-weight: 600;
-      font-size: 1.5rem;
-    }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-    .nav-links {
-      list-style: none;
-      display: flex;
-      gap: 1rem;
-    }
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h2 { margin: 0; color: #1e293b; font-size: 28px; font-weight: 700; }
+        .header p { color: #64748b; margin-top: 8px; font-size: 14px; }
 
-    .nav-links li a {
-      color: white;
-      text-decoration: none;
-      font-weight: 500;
-      transition: 0.3s;
-    }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; color: #475569; font-weight: 600; font-size: 14px; }
 
-    .nav-links li a:hover {
-      text-decoration: underline;
-    }
+        .input-group { position: relative; }
+        .input-group i {
+            position: absolute; left: 15px; top: 50%;
+            transform: translateY(-50%); color: #94a3b8;
+        }
 
-    .hamburger {
-      font-size: 24px;
-      background: none;
-      color: #fff;
-      border: none;
-      display: none;
-      cursor: pointer;
-    }
+        input {
+            width: 100%; padding: 12px 15px 12px 45px;
+            border: 1.5px solid #e2e8f0; border-radius: 12px;
+            font-size: 15px; transition: all 0.3s;
+            background: white; box-sizing: border-box;
+        }
 
-    @media (max-width: 768px) {
-      .nav-links {
-        display: none;
-        flex-direction: column;
-        background: #007bff;
-        width: 100%;
-        padding: 1rem 0;
-        margin-top: 0.5rem;
-      }
-      .nav-links.show {
-        display: flex;
-        animation: fadeIn 0.3s ease-in-out;
-      }
-      .hamburger {
-        display: block;
-      }
-    }
+        input:focus {
+            outline: none; border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(99,102,241,0.1);
+        }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+        .btn-login {
+            width: 100%; background: var(--primary); color: white;
+            padding: 14px; border: none; border-radius: 12px;
+            font-size: 16px; font-weight: 700; cursor: pointer;
+            transition: 0.3s; margin-top: 10px;
+        }
 
-    /* Login Section */
-    .form-section {
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 2rem;
-    }
+        .btn-login:hover {
+            background: var(--primary-hover); transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(99,102,241,0.4);
+        }
 
-    .form-container {
-      background: white;
-      padding: 2.5rem;
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-      max-width: 400px;
-      width: 100%;
-      text-align: center;
-      transition: transform 0.3s;
-    }
-
-    .form-container:hover {
-      transform: translateY(-5px);
-    }
-
-    .form-section h1 {
-      margin-bottom: 1.5rem;
-      color: #007bff;
-      font-size: 1.8rem;
-    }
-
-    .form-container input {
-      width: 100%;
-      padding: 12px 15px;
-      margin-bottom: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 1rem;
-      transition: border-color 0.3s;
-    }
-
-    .form-container input:focus {
-      outline: none;
-      border-color: #007bff;
-    }
-
-    .login-btn {
-      width: 100%;
-      padding: 12px;
-      background: #007bff;
-      color: white;
-      font-weight: 600;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 1rem;
-      transition: background 0.3s;
-    }
-
-    .login-btn:hover {
-      background: #0056b3;
-    }
-
-    .form-container p {
-      margin-top: 1rem;
-      font-size: 0.9rem;
-    }
-
-    .form-container p a {
-      color: #007bff;
-      text-decoration: none;
-      font-weight: 500;
-    }
-
-    .form-container p a:hover {
-      text-decoration: underline;
-    }
-
-    /* Footer */
-    .footer {
-      text-align: center;
-      padding: 1rem;
-      background: #007bff;
-      color: white;
-      font-size: 0.9rem;
-    }
-
-  </style>
+        .footer { text-align: center; margin-top: 25px; font-size: 14px; color: #64748b; }
+        .footer a { color: var(--primary); text-decoration: none; font-weight: 600; }
+        .error-msg { background: #fee2e2; color: #dc2626; padding: 12px; border-radius: 10px; font-size: 13px; margin-bottom: 20px; display: none; }
+    </style>
 </head>
 <body>
 
-<header>
-  <nav class="navbar">
-    <div class="logo">DoubtDock</div>
-    <button class="hamburger" id="hamburgerBtn">☰</button>
-    <ul class="nav-links" id="navLinks">
-      <li><a href="index.html">Home</a></li>
-      <li><a href="resources.html">Resources</a></li>
-      
-      <li><a href="about.html">About</a></li>
-      
-      
-      
-      
-      <li><a href="login.html">Login</a></li>
-      <li><a href="register.html">Sign Up</a></li>
-    </ul>
-  </nav>
-</header>
+<div class="login-card">
+    <div class="header">
+        <h2>Welcome Back</h2>
+        <p>Enter your details to access DoubtDock</p>
+    </div>
 
-<section class="form-section">
-  <form class="form-container" action="login.php" method="POST">
-    <h1>Login to Your Account</h1>
-    <input type="email" name="email" placeholder="Email Address" required>
-    <input type="password" name="password" placeholder="Password" required>
-    <button type="submit" class="login-btn">Login</button>
-     <a href="forgot_password.php">Forget Password</a>
-    <p>Don't have an account? <a href="register.html">Register here</a>.</p>
-  </form>
-</section>
+    <!-- We keep login.php as the handler -->
+    <form action="login.php" method="POST">
+        <div class="form-group">
+            <label>Email Address</label>
+            <div class="input-group">
+                <i class="fa-solid fa-envelope"></i>
+                <input type="email" name="email" placeholder="name@college.edu" required>
+            </div>
+        </div>
 
-<footer class="footer">
-  <p>&copy; 2025 DoubtDock. All rights reserved.</p>
-</footer>
+        <div class="form-group">
+            <label>Password</label>
+            <div class="input-group">
+                <i class="fa-solid fa-lock"></i>
+                <input type="password" name="password" placeholder="••••••••" required>
+            </div>
+        </div>
 
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-  const navLinks = document.getElementById("navLinks");
-  const hamburger = document.getElementById("hamburgerBtn");
-  if (hamburger && navLinks) {
-    hamburger.addEventListener("click", () => {
-      navLinks.classList.toggle("show");
-    });
-  }
-});
-</script>
+        <button type="submit" class="btn-login">Sign In</button>
+    </form>
+
+    <div class="footer">
+        Don't have an account? <a href="register.html">Create one</a>
+    </div>
+</div>
 
 </body>
 </html>
+

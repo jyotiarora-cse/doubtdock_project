@@ -1,106 +1,207 @@
 <?php
 session_start();
 include 'db.php';
+require_once 'config.php';
 
-// Check if mentor is logged in
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'mentor') {
-    header("Location: login.html");
+    header("Location: login.php");
     exit();
 }
 
-$mentor_subject = $_SESSION['mentor_expertise']; 
-$mentor_id = $_SESSION['user_id'];
+$mentor_subject = $_SESSION['mentor_expertise'] ?? '';
+$branch         = $_SESSION['mentor_branch']     ?? '';
+$mentor_id      = $_SESSION['user_id']           ?? 0;
+$mentor_name    = $_SESSION['user_name']         ?? 'Mentor';
 
-// SQL Query to fetch pending doubts for this specific expertise
-$sql = "SELECT * FROM doubts WHERE subject = '$mentor_subject' AND status = 'Pending' ORDER BY doubt_id DESC";
-$result = mysqli_query($conn, $sql);
-
-if (!$result) {
-    die("Query Failed: " . mysqli_error($conn));
+if (empty($mentor_subject) || empty($branch)) {
+    $uid = (int)$mentor_id;
+    $q   = mysqli_query($conn, "SELECT branch, subject_experties FROM users WHERE user_id = $uid LIMIT 1");
+    if ($q && $row_u = mysqli_fetch_assoc($q)) {
+        $branch         = $row_u['branch']            ?? '';
+        $mentor_subject = $row_u['subject_experties'] ?? '';
+        $_SESSION['mentor_branch']    = $branch;
+        $_SESSION['mentor_expertise'] = $mentor_subject;
+    }
 }
-?>
 
+$subjects_arr = [];
+if (!empty($mentor_subject)) {
+    $subjects_arr = array_map('trim', explode(',', $mentor_subject));
+    $conditions   = [];
+    foreach ($subjects_arr as $subj) {
+        if (!empty($subj)) {
+            $safe = mysqli_real_escape_string($conn, $subj);
+            $conditions[] = "subject = '$safe'";
+        }
+    }
+    $doubts_condition = !empty($conditions) ? implode(' OR ', $conditions) : '1=0';
+} else {
+    $doubts_condition = '1=0';
+}
+
+$sql    = "SELECT * FROM doubts WHERE ($doubts_condition) AND status = 'Pending' ORDER BY doubt_id DESC";
+$result = mysqli_query($conn, $sql);
+if (!$result) die("Query Failed: " . mysqli_error($conn));
+
+$subjects_json = json_encode(array_values(array_filter($subjects_arr)));
+$pending_count = mysqli_num_rows($result);
+
+// Fetch recently solved/active doubts for this mentor
+$history_sql = "SELECT d.*, u.name as student_name 
+                FROM doubts d 
+                JOIN users u ON d.student_id = u.user_id 
+                WHERE d.mentor_id = $mentor_id 
+                ORDER BY d.created_at DESC LIMIT 5";
+$history_result = mysqli_query($conn, $history_sql);
+
+$resource_success = $_SESSION['resource_success'] ?? '';
+unset($_SESSION['resource_success']);
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mentor Dashboard | DoubtDock</title>
-    <meta http-equiv="refresh" content="30"> 
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
-        .container { max-width: 900px; margin: auto; }
-        
-        .header { 
-            display: flex; justify-content: space-between; align-items: center; 
-            background: white; padding: 15px 25px; border-radius: 15px; margin-bottom: 25px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-
-        .card { 
-            background: white; padding: 25px; margin-bottom: 20px; border-radius: 15px; 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05); display: flex; 
-            justify-content: space-between; align-items: center; 
-            border-left: 6px solid #007bff; transition: 0.3s;
-        }
-        .card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
-
-        .btn-claim { 
-            background: #28a745; color: white; padding: 14px 28px; 
-            text-decoration: none; border-radius: 10px; font-weight: bold; 
-            box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3);
-        }
-        .btn-claim:hover { background: #218838; }
-
-        .subject-tag { 
-            background: #e7f1ff; color: #007bff; padding: 6px 15px; 
-            border-radius: 50px; font-size: 12px; font-weight: 700; 
-        }
-        
-        .logout-btn { color: #dc3545; font-weight: 600; text-decoration: none; border: 1px solid #dc3545; padding: 8px 15px; border-radius: 8px; transition: 0.3s; }
-        .logout-btn:hover { background: #dc3545; color: white; }
-
-        .badge-live {
-            display: inline-block; width: 10px; height: 10px; background: #28a745;
-            border-radius: 50%; margin-right: 5px; animation: blink 1.5s infinite;
-        }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        .dashboard-layout { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+        .header-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 3rem; }
+        .action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 3rem; }
+        .action-card { padding: 1.5rem; display: flex; align-items: center; gap: 1rem; cursor: pointer; transition: all 0.3s; }
+        .action-card i { font-size: 2rem; color: var(--primary); }
+        .doubt-feed { display: grid; gap: 1.5rem; }
+        .doubt-card { border-left: 4px solid var(--primary); padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+        .subject-badge { background: var(--primary-glow); color: var(--primary); padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.75rem; font-weight: 700; }
+        .online-status { display: flex; align-items: center; gap: 0.5rem; color: var(--success); font-size: 0.875rem; font-weight: 600; }
+        .dot-blink { width: 8px; height: 8px; background: var(--success); border-radius: 50%; animation: pulse 2s infinite; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div>
-                <h2 style="margin:0;">Welcome, <span style="color: #007bff;"><?php echo htmlspecialchars($_SESSION['user_name']); ?></span></h2>
-                <small style="color: #666;"><span class="badge-live"></span> Active in <b><?php echo htmlspecialchars($mentor_subject); ?></b></small>
+    <div class="bg-mesh-container"></div>
+    <nav class="nav-modern">
+        <div class="nav-logo"><i class="fa-solid fa-graduation-cap"></i> DoubtDock</div>
+        <div class="flex items-center">
+            <div class="online-status mr-6">
+                <div class="dot-blink"></div> Online & Visible
             </div>
-            <a href="logout.php" class="logout-btn">Logout</a>
+            <a href="logout.php" class="btn-modern btn-secondary-modern" style="padding: 0.5rem 1rem;">Logout</a>
+        </div>
+    </nav>
+
+    <div class="dashboard-layout animate-up">
+        <?php if ($resource_success): ?>
+            <div class="card-premium mb-4" style="background: var(--primary-glow); border-color: var(--primary); color: var(--primary); padding: 1rem;">
+                <i class="fa-solid fa-circle-check"></i> <?= htmlspecialchars($resource_success) ?>
+            </div>
+        <?php endif; ?>
+
+        <div class="header-section">
+            <div>
+                <h1>Hello, <em><?= htmlspecialchars($mentor_name) ?></em>! 👋</h1>
+                <p class="text-muted">You are assigned to <strong><?= htmlspecialchars($branch) ?></strong> branch.</p>
+                <div class="flex gap-2 mt-2">
+                    <?php foreach ($subjects_arr as $s): ?>
+                        <span class="subject-badge"><?= htmlspecialchars($s) ?></span>
+                    <?php endforeach; ?>
+                </div>
+            </div>
         </div>
 
-        <h3 style="color: #444; margin-bottom: 20px;">Pending Doubts (Real-time Feed)</h3>
-
-        <?php if(mysqli_num_rows($result) > 0): ?>
-            <?php while($row = mysqli_fetch_assoc($result)): ?>
-                <div class="card">
-                    <div style="flex: 1; padding-right: 20px;">
-                        <span class="subject-tag"><?php echo htmlspecialchars($row['subject']); ?></span>
-                        <h3 style="margin: 15px 0 10px 0; color: #333;"><?php echo htmlspecialchars($row['topic']); ?></h3>
-                        <p style="color: #555; line-height: 1.6;"><?php echo nl2br(htmlspecialchars($row['description'])); ?></p>
-                        <small style="color: #999;">Doubt ID: #<?php echo $row['doubt_id']; ?></small>
-                    </div>
-
-                    <div>
-                        <a href="claim_doubt.php?id=<?php echo $row['doubt_id']; ?>" class="btn-claim">Accept & Chat</a>
-                    </div>
+        <div class="action-grid">
+            <a href="upload_resources.php" class="card-premium action-card">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+                <div>
+                    <h3 style="font-size: 1.1rem;">Upload Resources</h3>
+                    <p class="text-muted" style="font-size: 0.875rem;">Share notes and PDFs</p>
                 </div>
-            <?php endwhile; ?>
-        <?php else: ?>
-            <div style="text-align: center; padding: 80px 20px; background: white; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05);">
-                <img src="https://cdn-icons-png.flaticon.com/512/2618/2618245.png" width="80" style="opacity: 0.2; margin-bottom: 20px;">
-                <h3 style="color: #bbb;">No Pending Doubts Right Now</h3>
-                <p style="color: #999;">New doubts in <b><?php echo htmlspecialchars($mentor_subject); ?></b> will appear here automatically.</p>
+            </a>
+            <a href="manage_resources.php" class="card-premium action-card">
+                <i class="fa-solid fa-folder-open"></i>
+                <div>
+                    <h3 style="font-size: 1.1rem;">Manage Library</h3>
+                    <p class="text-muted" style="font-size: 0.875rem;">Your uploaded materials</p>
+                </div>
+            </a>
+            <a href="view_resources.php" class="card-premium action-card">
+                <i class="fa-solid fa-eye"></i>
+                <div>
+                    <h3 style="font-size: 1.1rem;">Browse All</h3>
+                    <p class="text-muted" style="font-size: 0.875rem;">View all student resources</p>
+                </div>
+            </a>
+        </div>
+
+        <h2 class="mb-4"><i class="fa-solid fa-bolt" style="color: var(--accent);"></i> Pending Doubts (<span id="pending-count"><?= $pending_count ?></span>)</h2>
+        
+        <div id="doubt-feed" class="doubt-feed mb-4">
+            <?php if ($pending_count > 0): ?>
+                <?php while ($row = mysqli_fetch_assoc($result)): ?>
+                    <div class="card-premium doubt-card" id="doubt-<?= $row['doubt_id'] ?>">
+                        <div style="flex: 1;">
+                            <span class="subject-badge mb-2"><?= htmlspecialchars($row['subject']) ?></span>
+                            <h3 class="mb-2"><?= htmlspecialchars($row['topic']) ?></h3>
+                            <p class="text-muted" style="font-size: 0.9rem;"><?= nl2br(htmlspecialchars($row['description'])) ?></p>
+                        </div>
+                        <a href="claim_doubt.php?id=<?= $row['doubt_id'] ?>" class="btn-modern btn-primary-modern">
+                            Accept & Chat <i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                    </div>
+                <?php endwhile; ?>
+            <?php else: ?>
+                <div class="card-premium text-center" style="padding: 4rem;">
+                    <i class="fa-solid fa-mug-hot mb-4" style="font-size: 3rem; color: var(--border-color);"></i>
+                    <p class="text-muted">No pending doubts right now. Grab a coffee!</p>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <?php if (mysqli_num_rows($history_result) > 0): ?>
+            <h2 class="mb-4 mt-4"><i class="fa-solid fa-history" style="color: var(--primary);"></i> My Recent Chats</h2>
+            <div class="doubt-feed">
+                <?php while ($h = mysqli_fetch_assoc($history_result)): ?>
+                    <div class="card-premium doubt-card" style="border-left-color: var(--success);">
+                        <div style="flex: 1;">
+                            <div class="flex items-center gap: 0.5rem; mb-2">
+                                <span class="status-badge" style="background: #dcfce7; color: #15803d;"><?= $h['status'] ?></span>
+                                <span class="subject-tag"><?= htmlspecialchars($h['subject']) ?></span>
+                            </div>
+                            <h3 class="mb-1"><?= htmlspecialchars($h['topic']) ?></h3>
+                            <p class="text-muted" style="font-size: 0.85rem;">Student: <?= htmlspecialchars($h['student_name']) ?></p>
+                        </div>
+                        <a href="chat_ui.php?id=<?= $h['doubt_id'] ?>" class="btn-modern btn-secondary-modern">
+                            View Conversation <i class="fa-solid fa-arrow-right"></i>
+                        </a>
+                    </div>
+                <?php endwhile; ?>
             </div>
         <?php endif; ?>
     </div>
+
+    <script src="<?= NODE_URL ?>/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io('<?= NODE_URL ?>');
+        const mySubjects = <?= $subjects_json ?>.map(s => s.trim().toLowerCase());
+        
+        socket.on('connect', () => {
+            socket.emit('mentor_online', {
+                id: "<?= $mentor_id ?>",
+                name: "<?= addslashes($mentor_name) ?>",
+                subject: "<?= addslashes($mentor_subject) ?>"
+            });
+        });
+
+        socket.on('new_doubt', (data) => {
+            if (!mySubjects.includes(data.subject.trim().toLowerCase())) return;
+            location.reload(); // Refresh to show new doubt with full details
+        });
+
+        socket.on('doubt_claimed', (data) => {
+            const el = document.getElementById('doubt-' + data.doubt_id);
+            if (el) el.remove();
+        });
+    </script>
 </body>
 </html>
