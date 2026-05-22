@@ -1,0 +1,27 @@
+# Database and App Credentials (SECRETS - DO NOT REMOVE FROM GITIGNORE)
+config.php
+chat_server/Server/.env
+
+# Composer dependencies
+/vendor/
+
+# Node.js dependencies
+**/node_modules/
+
+# User Uploads (Contains dynamic user attachments and files)
+/uploads/
+
+# Temporary directories, local extractions, and zip archives
+/temp_files/
+/temp_files_1/
+/zip5/
+/*.zip
+/files (1)/
+/image.png
+
+# IDEs, OS, and Logs
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log

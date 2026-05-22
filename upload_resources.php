@@ -64,7 +64,13 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'mentor') {
                         ?>
                             <option value="<?= htmlspecialchars($subject) ?>"><?= htmlspecialchars($subject) ?></option>
                         <?php endforeach; ?>
+                        <option value="Other">Other (Specify...)</option>
                     </select>
+                </div>
+
+                <div id="other-subject-container" class="mb-4" style="display:none;">
+                    <label class="text-muted mb-1" style="display:block; font-size:0.875rem;">Specify Subject</label>
+                    <input type="text" name="other_subject" id="other-subject-input" class="input-modern" placeholder="e.g. Quantum Physics">
                 </div>
 
                 <div class="mb-4">
@@ -99,6 +105,21 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'mentor') {
     </div>
 
     <script>
+        // Toggle "Other" subject input
+        const subjectSelect = document.querySelector('select[name="subject"]');
+        const otherContainer = document.getElementById('other-subject-container');
+        const otherInput = document.getElementById('other-subject-input');
+
+        subjectSelect.addEventListener('change', function() {
+            if (this.value === 'Other') {
+                otherContainer.style.display = 'block';
+                otherInput.setAttribute('required', 'required');
+            } else {
+                otherContainer.style.display = 'none';
+                otherInput.removeAttribute('required');
+            }
+        });
+
         function handleFile(input) {
             const fileName = document.getElementById('file-name');
             if (input.files && input.files[0]) {

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 session_start();
 include 'db.php';
 require_once 'config.php';
@@ -12,7 +12,13 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'mentor') {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $mentor_id = $_SESSION['user_id'];
     $title = mysqli_real_escape_string($conn, $_POST['title']);
+    
+    // Handle "Other" subject logic
     $subject = mysqli_real_escape_string($conn, $_POST['subject']);
+    if ($subject === 'Other' && !empty($_POST['other_subject'])) {
+        $subject = mysqli_real_escape_string($conn, $_POST['other_subject']);
+    }
+
     $branch = mysqli_real_escape_string($conn, $_POST['branch']);
 
     // File Details

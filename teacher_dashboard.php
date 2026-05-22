@@ -39,7 +39,11 @@ if (!empty($mentor_subject)) {
     $doubts_condition = '1=0';
 }
 
-$sql    = "SELECT * FROM doubts WHERE ($doubts_condition) AND status = 'Pending' ORDER BY doubt_id DESC";
+$sql    = "SELECT * FROM doubts 
+           WHERE ($doubts_condition) 
+           AND status = 'Pending' 
+           AND last_heartbeat > NOW() - INTERVAL 20 SECOND
+           ORDER BY doubt_id DESC";
 $result = mysqli_query($conn, $sql);
 if (!$result) die("Query Failed: " . mysqli_error($conn));
 
@@ -50,7 +54,7 @@ $pending_count = mysqli_num_rows($result);
 $history_sql = "SELECT d.*, u.name as student_name 
                 FROM doubts d 
                 JOIN users u ON d.student_id = u.user_id 
-                WHERE d.mentor_id = $mentor_id 
+                WHERE d.mentor_id = $mentor_id AND d.status NOT IN ('Solved', 'Closed')
                 ORDER BY d.created_at DESC LIMIT 5";
 $history_result = mysqli_query($conn, $history_sql);
 
@@ -164,7 +168,7 @@ unset($_SESSION['resource_success']);
                 <?php while ($h = mysqli_fetch_assoc($history_result)): ?>
                     <div class="card-premium doubt-card" style="border-left-color: var(--success);">
                         <div style="flex: 1;">
-                            <div class="flex items-center gap: 0.5rem; mb-2">
+                            <div class="flex items-center gap-2 mb-2">
                                 <span class="status-badge" style="background: #dcfce7; color: #15803d;"><?= $h['status'] ?></span>
                                 <span class="subject-tag"><?= htmlspecialchars($h['subject']) ?></span>
                             </div>

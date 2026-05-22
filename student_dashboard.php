@@ -107,7 +107,7 @@ $doubt_result = $doubt_stmt->get_result();
         <div class="nav-logo">
             <i class="fa-solid fa-graduation-cap"></i> DoubtDock
         </div>
-        <div class="flex items-center gap: 1rem;">
+        <div class="flex items-center gap-4">
             <span class="text-muted mr-4">Logged in as <strong><?= htmlspecialchars($student_name) ?></strong></span>
             <a href="logout.php" class="btn-modern btn-secondary-modern" style="padding: 0.5rem 1rem;">Logout</a>
         </div>
@@ -142,7 +142,7 @@ $doubt_result = $doubt_stmt->get_result();
                         ?>
                             <div class="card-premium doubt-item" style="flex-direction: column; align-items: flex-start; gap: 0.5rem;">
                                 <div class="flex items-center justify-between" style="width: 100%;">
-                                    <div class="flex items-center gap: 0.5rem;">
+                                    <div class="flex items-center gap-2">
                                         <span class="status-badge <?= $badgeClass ?>"><?= $row['status'] ?></span>
                                         <span class="subject-tag"><?= htmlspecialchars($row['subject']) ?></span>
                                     </div>
@@ -155,7 +155,7 @@ $doubt_result = $doubt_stmt->get_result();
                                 </p>
 
                                 <div class="flex items-center justify-between" style="width: 100%; border-top: 1px solid var(--border-color); padding-top: 0.75rem; margin-top: 0.25rem;">
-                                    <div class="flex items-center gap: 0.5rem;">
+                                    <div class="flex items-center gap-2">
                                         <div class="stat-icon" style="width: 24px; height: 24px; font-size: 0.7rem;">
                                             <i class="fa-solid fa-user-tie"></i>
                                         </div>
@@ -193,36 +193,64 @@ $doubt_result = $doubt_stmt->get_result();
         </div>
     </div>
 
+    <script src="<?= NODE_URL ?>/socket.io/socket.io.js"></script>
     <script>
+        const socket = io('<?= NODE_URL ?>');
+
         function loadOnlineMentors() {
             fetch('<?= NODE_URL ?>/online-mentors')
                 .then(r => r.json())
                 .then(mentors => {
                     const list = document.getElementById('mentors-list');
-                    if (mentors.length === 0) {
-                        list.innerHTML = `<div class="card-premium text-muted" style="font-size: 0.875rem;">No mentors online</div>`;
+                    if (!mentors || mentors.length === 0) {
+                        list.innerHTML = `<div class="card-premium text-muted" style="font-size: 0.875rem; text-align: center; padding: 20px;">
+                            <i class="fa-solid fa-user-slash mb-2" style="display:block; font-size:1.5rem; opacity:0.5;"></i>
+                            No mentors online right now
+                        </div>`;
                         return;
                     }
                     list.innerHTML = mentors.map(m => `
-                        <div class="card-premium" style="padding: 1rem; display: flex; align-items: center; gap: 1rem;">
-                            <div class="stat-icon" style="width: 40px; height: 40px; font-size: 1rem;">
+                        <div class="card-premium" style="padding: 1rem; display: flex; align-items: center; gap: 1rem; border-left: 3px solid var(--success);">
+                            <div class="stat-icon" style="width: 40px; height: 40px; font-size: 1rem; flex-shrink: 0;">
                                 ${m.name.charAt(0).toUpperCase()}
                             </div>
-                            <div style="flex: 1;">
-                                <div style="font-weight: 700; font-size: 0.9rem;">${m.name}</div>
-                                <div class="text-muted" style="font-size: 0.75rem;">${m.subject || 'General'}</div>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 700; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${m.name}</div>
+                                <div class="text-muted" style="font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    ${m.subject || 'General Expertise'}
+                                </div>
+                                ${m.rating ? `
+                                    <div style="font-size: 11px; color: #f59e0b; margin-top: 2px;">
+                                        <i class="fa-solid fa-star"></i> ${m.rating} <span style="color:#94a3b8">(${m.review_count} reviews)</span>
+                                    </div>
+                                ` : ''}
                             </div>
-                            <a href="request_mentor.php?mentor_id=${m.id}" class="btn-modern btn-primary-modern" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;">Connect</a>
+                            <a href="request_mentor.php?mentor_id=${m.id}" class="btn-modern btn-primary-modern" style="padding: 0.4rem 0.8rem; font-size: 0.75rem; flex-shrink: 0;">Connect</a>
                         </div>
                     `).join('');
                 })
-                .catch(() => {
-                    document.getElementById('mentors-list').innerHTML = `<div class="card-premium text-muted">Node Server Offline</div>`;
+                .catch((err) => {
+                    console.error("Mentor fetch error:", err);
+                    document.getElementById('mentors-list').innerHTML = `<div class="card-premium text-muted" style="color:var(--danger);">
+                        <i class="fa-solid fa-triangle-exclamation"></i> Chat Server Offline
+                    </div>`;
                 });
         }
         
-        loadOnlineMentors();
-        setInterval(loadOnlineMentors, 10000);
+        socket.on('connect', () => {
+            console.log("Connected to Socket Server");
+            loadOnlineMentors();
+        });
+
+        socket.on('mentors_updated', () => {
+            console.log("Mentors list changed, refreshing...");
+            loadOnlineMentors();
+        });
+
+        // Fallback for disconnects
+        socket.on('disconnect', () => {
+            console.warn("Disconnected from Socket Server");
+        });
     </script>
 </body>
 </html>

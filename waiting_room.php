@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 session_start();
 include 'db.php';
 require_once 'config.php';
@@ -224,6 +224,12 @@ $verify->close();
             })
             .catch(() => {});
     }, 3000);
+
+    // ── Heartbeat every 5s to tell mentors we are still here ──────────────────
+    setInterval(() => {
+        if (mentorFound) return;
+        fetch('heartbeat.php?id=' + doubtId).catch(() => {});
+    }, 5000);
 
     // ── Countdown ticker ──────────────────────────────────────────────────────
     const ticker = setInterval(() => {

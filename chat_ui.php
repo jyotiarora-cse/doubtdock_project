@@ -474,7 +474,17 @@ if ($current_user_id != $doubt_student_id && $current_user_id != $doubt_mentor_i
         messagesDiv.appendChild(div);
         scrollToBottom();
 
-        if (isMe && myRole === 'mentor' && status === 'normal') showThinking();
+        if (isMe && myRole === 'mentor') {
+            // Mentor will wait for AI results (which are emitted as 'receive_message' with status 'correct/wrong/complex')
+            // No need to show thinking here anymore as it's handled by 'ai_thinking' event
+        }
+    });
+
+    // New AI Thinking Event Listener
+    socket.on('ai_thinking', (data) => {
+        if (String(data.doubtId) === String(doubtId) && myRole === 'mentor') {
+            showThinking();
+        }
     });
 
     function showThinking() {
